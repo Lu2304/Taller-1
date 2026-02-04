@@ -1,7 +1,7 @@
 rm(list = ls())
 
 # Bucle para que R busque los paquetes requridos y si no está instalado, instalarlo y después cargarlo.
-pkgs <- c("rio", "tidyverse", "skimr")
+pkgs <- c("rio", "tidyverse", "skimr", "stargazer")
 
 for (i in pkgs) {
   if(!requireNamespace(i)) {
