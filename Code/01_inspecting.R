@@ -77,3 +77,25 @@ vars_miss <- vars_miss |>
 
 mcorrmiss <- cor(vars_miss)
 corrplot(mcorrmiss)
+
+# Ver datos filtrados por edad (+18) y por ocupados y volvemos a hacer la tabla 
+# de porcentaje de NAs. Después de filtrar los datos podemos observar que ahora 
+# para la mayoría de variables no hay NAs y para el ingreso bajó el porcentaje 
+# de NAs de 57.9% a 13.5%
+df_filtrado <- GEIH_BOG_01 |> 
+  filter(age >= 18, ocu == 1) |> 
+  select(all_of(vars_interes))
+
+tabla_na_filtrado <- df_filtrado |> 
+  summarise(across(
+    everything(),
+    ~ mean(is.na(.x)) * 100
+  )) |> 
+  pivot_longer(
+    cols = everything(),
+    names_to = "variable",
+    values_to = "porcentaje_NA"
+  ) |> 
+  arrange(desc(porcentaje_NA))
+
+tabla_na_filtrado
