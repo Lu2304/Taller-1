@@ -10,9 +10,5 @@ for (i in pkgs) {
   library(i, character.only = TRUE)
 }
 
-# Importar datos (primer conjunto)
-GEIH_BOG_01 <- import("https://github.com/ignaciomsarmiento/datasets/blob/main/GEIH_sample1.Rds?raw=true")
-GEIH_BOG_01 <- as_tibble(GEIH_BOG_01)
-
 # Inspeccionar los datos
 source("01_inspecting.R")
