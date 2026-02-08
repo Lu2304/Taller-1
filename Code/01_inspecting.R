@@ -1,3 +1,110 @@
+
+# install pacman
+if(!require(pacman)) install.packages("pacman") ; require(pacman)
+
+pacman::p_load(
+  readr,        # Importar datos (ya incluido en tidyverse)
+  labelled,     # Manejo de etiquetas
+  naniar,       # Visualizar datos faltantes
+  DataExplorer, # Gráficos de missing values
+  psych,        # Estadísticas descriptivas
+  rvest,        # Web scraping
+  rio,          # Importar/exportar datos
+  tidyverse,    # Conjunto de paquetes para tidy data (incluye dplyr, ggplot2, etc.)
+  skimr,        # Resumen de datos
+  visdat,       # Visualizar datos faltantes
+  corrplot,     # Gráficos de correlación
+  gridExtra,    # Organización de gráficos
+  MASS,         # Funciones estadísticas diversas
+  stargazer,    # Tablas para salida a TEX
+  chromote,     # Automatización de navegador (útil para scraping avanzado)
+  ggplot2,      # Gráficos (ya incluido en tidyverse)
+  boot,         # Funciones de bootstrap
+  patchwork,    # Combinación de gráficos
+  dplyr
+)
+
+# ------------------------------------------------------------- #
+# ------------------Web scraping --------------------- 
+# ------------------------------------------------------------- #
+
+if (!dir.exists("Bases")) {
+  dir.create("Bases")
+  cat("Carpeta 'Bases' creada.\n")
+}
+
+#Se revisa Html,pero las bases no aparecen directamente. 
+# El contenido se carga dinámicamente utilizando el atributo "w3-include-html"
+#Por lo que se scrapea directamente los archivos html que contienen las tablas
+
+urls <- paste0(
+  "https://ignaciomsarmiento.github.io/GEIH2018_sample/pages/geih_page_",
+  1:10,
+  ".html"
+)
+
+#guardar en listas cada tabla
+
+lista_tablas <- lapply(urls, function(x) {
+  read_html(x) %>%
+    html_element("table") %>%
+    html_table()
+})
+
+#validar que los nombres de las columnas conincidan antes de pegar
+
+nombres_columnas <- lapply(lista_tablas, names)
+ref <- nombres_columnas[[1]]
+sapply(nombres_columnas, function(x) identical(x, ref))
+
+#Todos los nombres coinciden
+
+#Unir las bases
+base_completa <- bind_rows(lista_tablas)
+
+
+# ------------------------------------------------------------- #
+# ------------------limpieza de datos --------------------- 
+# ------------------------------------------------------------- #
+
+#solo nos interesan mayores de edad y ocupados
+
+summary(base_completa$age)
+summary(base_completa$ocu)
+
+base_filtrada1 <- base_completa %>%
+  filter(age >= 18, ocu == 1)
+
+#Variable de resultado y_total_m
+summary(base_completa$y_total_m)  
+
+#El sub registro de ingreso está más asociado a informales 
+
+prop.table(
+  table(is.na(base_filtrada1$y_total_m), base_filtrada1$informal),
+  margin = 2
+)
+
+# Gráfica dispersión ingresos por edad y nivel de informalidad
+ggplot(data = base_filtrada1 , 
+       mapping = aes(x = age , y = log(y_total_m) , group=as.factor(informal) , color=as.factor(informal))) +
+  geom_point()
+
+#Eliminamos los NAs
+
+base_filtrada2 <- base_filtrada1 %>%
+  filter(!is.na(y_total_m))
+
+
+
+
+
+###
+
+
+
+
+
 # Funciones para conocer la estructura general de los datos
 head(GEIH_BOG_01)
 tail(GEIH_BOG_01)
