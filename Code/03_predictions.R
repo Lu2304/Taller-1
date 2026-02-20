@@ -7,13 +7,8 @@ base_chunks <- bind_rows(
 )
 
 base_chunks_filtrada <- base_chunks |>
-  filter(age >= 18, ocu == 1) |>
-  drop_na(y_total_m, age, total_hours_worked, relab, p6210, size_firm, informal, sex, p6426)
-
-base_chunks_filtrada <- base_chunks_filtrada %>%
-  group_by(relab) %>%
-  filter(n() >= 30) %>%
-  ungroup()
+  filter(age >= 18, ocu == 1, relab %in% 1:7) |>
+  drop_na(y_total_m)
 
 des_vars <- c("y_total_m", "age", "total_hours_worked", "relab", "p6210",
               "size_firm", "informal", "sex", "p6426")
@@ -54,18 +49,15 @@ validation <- validation %>%
   filter(is.finite(log_w))
 
 # Especificaciones
-form_s1_uncond <- log_w ~ age + age2
-form_s1_cond   <- log_w ~ age + age2 + total_hours_worked + relab  
+form_s1_age   <- log_w ~ age + age2 + total_hours_worked + relab  
+form_s2_gap     <- log_w ~ female + age + age2 + p6210
 
-form_s2_cond     <- log_w ~ female + relab + informal
-
-form_1 <- log_w ~ age + age2 + total_hours_worked + relab + p6210 + size_firm + informal + exper_yrs + exper_yrs2 
-form_2 <- log_w ~ poly(age,3,raw=TRUE) + total_hours_worked + relab + p6210 + size_firm + informal + exper_yrs + exper_yrs2 
-form_3 <- log_w ~ poly(age,3,raw=TRUE) + total_hours_worked + relab + p6210 + size_firm + informal + exper_yrs + exper_yrs2 +
-  female + poly(exper_yrs, 3, raw=TRUE):female
-form_4 <- log_w ~ poly(age,3,raw=TRUE) + total_hours_worked + relab + p6210 + size_firm + informal +
-  relab:informal
-form_5 <- log_w ~ poly(age,3,raw=TRUE) + total_hours_worked + relab + p6210 + size_firm + informal +
+form_1 <- log_w ~ age + age2 + total_hours_worked + relab + p6210 + size_firm + informal + exper_yrs + exper_yrs2 + female
+form_2 <- log_w ~ poly(age,3,raw=TRUE) + total_hours_worked + relab + p6210 + size_firm + informal +  poly(exper_yrs, 3, raw=TRUE) + female
+form_3 <- log_w ~ poly(age,3,raw=TRUE) + total_hours_worked + relab + p6210 + size_firm + informal + poly(exper_yrs, 3, raw=TRUE):female + female
+form_4 <- log_w ~ poly(age,3,raw=TRUE) + total_hours_worked + relab + p6210 + size_firm + informal +  poly(exper_yrs, 3, raw=TRUE) +
+  female + relab:informal
+form_5 <- log_w ~ poly(age,3,raw=TRUE) + total_hours_worked + relab + p6210 + size_firm + informal + poly(exper_yrs, 3, raw=TRUE) +
   female + relab:female + informal:female
 
 fit_and_rmse <- function(formula, train_df, valid_df) {
@@ -76,9 +68,8 @@ fit_and_rmse <- function(formula, train_df, valid_df) {
 }
 
 specs <- list(
-  "S1_uncond" = form_s1_uncond,
-  "S1_cond"   = form_s1_cond,
-  "S2_gap"    = form_s2_cond,
+  "S1_age"   = form_s1_age,
+  "S2_gap"    = form_s2_gap,
   "Extra_1"   = form_1,
   "Extra_2"   = form_2,
   "Extra_3"   = form_3,
@@ -95,23 +86,14 @@ rmse_table <- tibble(
 
 rmse_table
 
+rmse_table_export <- rmse_table |> 
+  mutate(across(where(is.numeric), ~ round(., 3)))
+
 write.csv(
-  rmse_table,
+  rmse_table_export,
   file = file.path(path_tables, "rmse_validation_models.csv"),
   row.names = FALSE
 )
-
-rmse_compare <- tibble(
-  Metric = c("Validation RMSE", "LOOCV RMSE"),
-  Value  = c(rmse_table$RMSE_validation[1], rmse_loocv)
-)
-
-write.csv(
-  rmse_compare,
-  file = file.path(path_tables, "rmse_best_model.csv"),
-  row.names = FALSE
-)
-
 
 best_spec <- rmse_table$Spec[1]
 best_model <- results[[best_spec]]$model
@@ -123,6 +105,20 @@ h <- hatvalues(best_model)
 rmse_loocv <- sqrt(mean((e / (1 - h))^2))
 
 rmse_loocv
+
+rmse_compare <- tibble(
+  Metric = c("Validation RMSE", "LOOCV RMSE"),
+  Value  = c(rmse_table$RMSE_validation[1], rmse_loocv)
+)
+
+rmse_compare_export <- rmse_compare %>%
+  mutate(Value = round(Value, 2))
+
+write.csv(
+  rmse_compare_export,
+  file = file.path(path_tables, "rmse_best_model.csv"),
+  row.names = FALSE
+)
 
 c(RMSE_validation_best = rmse_table$RMSE_validation[1],
   RMSE_loocv_best = rmse_loocv)
@@ -137,18 +133,21 @@ diagnostics <- model.frame(best_model) |>
     loo_sqerr = loo_resid^2
   )
 
-top_loo <- diagnostics |> 
-  arrange(desc(loo_sqerr)) |> 
-  slice(1:20)
+top_loo_neg <- diagnostics |>
+  filter(loo_resid < 0) |>
+  arrange(loo_resid) |>
+  slice(1:10)
 
-top_loo
+top_loo_neg
+
+top_loo_neg_export <- top_loo_neg %>%
+  mutate(across(where(is.numeric), ~ round(., 2)))
 
 write.csv(
-  top_loo,
-  file = file.path(path_tables, "top20_loo_errors.csv"),
+  top_loo_neg_export,
+  file = file.path(path_tables, "top10_loo_errors.csv"),
   row.names = FALSE
 )
-
 
 mf <- model.frame(best_model)
 y  <- model.response(mf)
@@ -181,13 +180,16 @@ diagnostics$beta_influence <- influence_beta
 
 top_infl <- diagnostics %>%
   arrange(desc(beta_influence)) %>%
-  slice(1:20)
+  slice(1:10)
 
 top_infl
 
+top_infl_export <- top_infl %>%
+  mutate(across(where(is.numeric), ~ round(., 3)))
+
 write.csv(
-  top_infl,
-  file = file.path(path_tables, "top20_beta_influence.csv"),
+  top_infl_export,
+  file = file.path(path_tables, "top10_beta_influence.csv"),
   row.names = FALSE
 )
 
@@ -203,8 +205,11 @@ summary_tbl <- diagnostics %>%
 
 summary_tbl
 
+summary_tbl_export <- summary_tbl %>%
+  mutate(across(where(is.numeric), ~ round(., 2)))
+
 write.csv(
-  summary_tbl,
+  summary_tbl_export,
   file = file.path(path_tables, "best_model_diagnostics_summary.csv"),
   row.names = FALSE
 )
@@ -222,4 +227,3 @@ ggsave(
   height = 6,
   dpi = 300
 )
-
