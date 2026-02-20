@@ -1,15 +1,12 @@
 rm(list = ls())
 
-# Bucle para que R busque los paquetes requridos y si no está instalado, instalarlo y después cargarlo.
-pkgs <- c("rio", "tidyverse", "skimr", "stargazer", "dplyr", "tidyr", 
-          "corrplot", "pacman", "rvest", "flextable", "officer")
+#Instalación de paquetes y cargue de librerías
 
-for (i in pkgs) {
-  if(!requireNamespace(i)) {
-    install.packages(i)
-  }
-  library(i, character.only = TRUE)
-}
+if (!require("pacman")) install.packages("pacman")
+
+# Cargar y/o instalar todos los paquetes de una vez
+pacman::p_load(rio, tidyverse, skimr, stargazer, dplyr, tidyr, 
+               corrplot, rvest, flextable, officer, boot, ggplot2,webshot2, gt, modelsummary)
 
 # Paths 
 path_input  <- "Input"
