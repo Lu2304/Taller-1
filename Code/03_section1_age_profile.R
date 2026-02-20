@@ -127,7 +127,7 @@ pred_all <- bind_rows(pred_uncond, pred_cond)
 
 
 # ============================================================= #
-# 10) GRÁFICA ACADÉMICA – VERSIÓN MAESTRÍA (MEJORADA)
+# 10) GRÁFICA ACADÉMICA 
 # ============================================================= #
 
 library(scales)
