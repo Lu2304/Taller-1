@@ -1,5 +1,5 @@
 # ==============================================================================
-# SECCIÓN 2: BRECHA DE GÉNERO (CODIFICACIÓN: 1 = MUJER, 0 = HOMBRE)
+# SECCIÓN 2: BRECHA DE GÉNERO 
 # ==============================================================================
 
 #(CODIFICACIÓN: 1 = Hombre, 0 = Mujer)
@@ -218,29 +218,44 @@ se_analitico_m1 <- summary(model_incondicional)$coefficients["sex","Std. Error"]
 se_analitico_m2 <- summary(model_cap_humano)$coefficients["sex","Std. Error"]
 se_analitico_m3 <- summary(model_completo)$coefficients["sex","Std. Error"]
 
-tabla_gap %>%
-  gt() %>%
-  tab_header(title = "Brecha Salarial: OLS y FWL") %>%
-  fmt_number(
-    columns = 2:4,
-    rows = Variable %in% c("Hombre",
-                           "SE (Analítico)",
-                           "SE (Bootstrap)",
-                           "R2"),
-    decimals = 3
-  ) %>%
-  fmt_number(
-    columns = 2:4,
-    rows = Variable == "Num. Obs.",
-    decimals = 0
+# Construcción tabla
+tabla_gap <- data.frame(
+  Variable = c("Hombre",
+               "SE (Analítico)",
+               "SE (Bootstrap)",
+               "R2",
+               "Num. Obs."),
+  
+  M1 = c(
+    as.numeric(coef(model_incondicional)["sex"]),
+    se_analitico_m1,
+    se_boot_m1,
+    summary(model_incondicional)$r.squared,
+    nobs(model_incondicional)
+  ),
+  
+  M2 = c(
+    as.numeric(coef(model_cap_humano)["sex"]),
+    se_analitico_m2,
+    se_boot_m2,
+    summary(model_cap_humano)$r.squared,
+    nobs(model_cap_humano)
+  ),
+  
+  M3 = c(
+    as.numeric(coef(model_completo)["sex"]),
+    se_analitico_m3,
+    se_boot_m3,
+    summary(model_completo)$r.squared,
+    nobs(model_completo)
   )
-
-colnames(tabla_gap) <- c(
-  "Variable",
-  "(1)",
-  "(2)",
-  "(3)"
 )
+
+colnames(tabla_gap) <- c("Variable", "(1)", "(2)", "(3)")
+
+# =====================================================
+# Formato con gt
+# =====================================================
 
 tabla_regresiones <- tabla_gap %>%
   gt() %>%
@@ -259,6 +274,7 @@ tabla_regresiones <- tabla_gap %>%
     decimals = 0
   )
 
+tabla_regresiones
 
 gtsave(
   tabla_regresiones,
