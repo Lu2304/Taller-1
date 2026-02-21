@@ -1,0 +1,2 @@
+"rmse_in_sample","rmse_loocv","p95_loo_sqerr","p99_loo_sqerr","p95_beta_infl","p99_beta_infl"
+0.64,0.64,1.7,4.5,0,0

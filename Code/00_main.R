@@ -6,7 +6,7 @@ if (!require("pacman")) install.packages("pacman")
 
 # Cargar y/o instalar todos los paquetes de una vez
 pacman::p_load(rio, tidyverse, skimr, stargazer, dplyr, tidyr, 
-               corrplot, rvest, flextable, officer, boot, ggplot2,webshot2, gt, modelsummary)
+               corrplot, rvest, flextable, officer, boot, ggplot2,webshot2, gt, modelsummary, Metrics, caret)
 
 # Paths 
 path_input  <- "Input"
