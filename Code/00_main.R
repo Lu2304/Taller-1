@@ -22,5 +22,9 @@ dir.create(path_cleaned, recursive = TRUE, showWarnings = FALSE)
 dir.create(path_figures, recursive = TRUE, showWarnings = FALSE)
 dir.create(path_tables,  recursive = TRUE, showWarnings = FALSE)
 
-# Inspeccionar los datos
-source(file.path("Code", "01_inspecting.R"))
+source(file.path("Code", "01_data_scrapping.R"))
+source(file.path("Code", "02_inspecting.R"))
+source(file.path("Code", "03_section1_age_profile.R"))
+source(file.path("Code", "04_section_2_gap.R"))
+source(file.path("Code", "05_section3_predictions.R"))
+
