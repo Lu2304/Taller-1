@@ -11,10 +11,11 @@
 # ----------------------------- #
 # 4) DATA PARA SECCIÓN 1
 # ----------------------------- #
-df_s1 <- base_clean |>
+base_filtrada <- base_filtrada |>
   filter(!is.na(totalHoursWorked), !is.na(relab)) |>
   mutate(
     age2 = age^2,
+    ln_y = log(y_total_m),
     relab = factor(relab)
   )
 
@@ -24,9 +25,9 @@ df_s1 <- base_clean |>
 #   - Cuadrático incondicional
 #   - Condicional (solo horas + relab)
 # ----------------------------- #
-m_lin    <- lm(log_w ~ age, data = df_s1)
-m_uncond <- lm(log_w ~ age + age2, data = df_s1)
-m_cond   <- lm(log_w ~ age + age2 + totalHoursWorked + relab, data = df_s1)
+m_lin    <- lm(ln_y ~ age, data = base_filtrada)
+m_uncond <- lm(ln_y ~ age + age2, data = base_filtrada)
+m_cond   <- lm(ln_y ~ age + age2 + totalHoursWorked + relab, data = base_filtrada)
 
 # ----------------------------- #
 # 6) EDAD PICO (peak age) + BOOTSTRAP CI
@@ -54,8 +55,8 @@ boot_peak <- function(data, formula, R = 1000, seed = 123) {
   quantile(peaks, c(0.025, 0.975))
 }
 
-ci_uncond <- boot_peak(df_s1, log_w ~ age + age2, R = 1000)
-ci_cond   <- boot_peak(df_s1, log_w ~ age + age2 + totalHoursWorked + relab, R = 1000)
+ci_uncond <- boot_peak(base_filtrada, ln_y ~ age + age2, R = 1000)
+ci_cond   <- boot_peak(base_filtrada, ln_y ~ age + age2 + totalHoursWorked + relab, R = 1000)
 
 # ----------------------------- #
 # 7) TABLA PARA SLIDES (R2 + PEAK + IC + N)
@@ -95,8 +96,8 @@ stargazer(
 # 9) GRÁFICA DE PERFILES (incondicional vs condicional)
 # ----------------------------- #
 grid_age <- tibble(
-  age = seq(min(df_s1$age, na.rm = TRUE),
-            max(df_s1$age, na.rm = TRUE),
+  age = seq(min(base_filtrada$age, na.rm = TRUE),
+            max(base_filtrada$age, na.rm = TRUE),
             by = 1)
 ) |>
   mutate(age2 = age^2)
@@ -107,8 +108,8 @@ pred_uncond$yhat   <- predict(m_uncond, newdata = grid_age)
 pred_uncond$modelo <- "Incondicional"
 
 # Predicción condicional: fijar horas y relab en valores típicos
-typ_hours <- median(df_s1$totalHoursWorked, na.rm = TRUE)
-mode_relab <- df_s1 |>
+typ_hours <- median(base_filtrada$totalHoursWorked, na.rm = TRUE)
+mode_relab <- base_filtrada |>
   count(relab, sort = TRUE) |>
   slice(1) |>
   pull(relab)
@@ -116,7 +117,7 @@ mode_relab <- df_s1 |>
 grid_cond <- grid_age |>
   mutate(
     totalHoursWorked = typ_hours,
-    relab = factor(mode_relab, levels = levels(df_s1$relab))
+    relab = factor(mode_relab, levels = levels(base_filtrada$relab))
   )
 
 pred_cond <- grid_cond
@@ -197,7 +198,7 @@ p_s1_academica
 
 
 ggsave(
-  filename = file.path(path_figs, "fig_s1_perfil_edad_ingreso_academica.png"),
+  filename = file.path(path_figures, "fig_s1_perfil_edad_ingreso_academica.png"), 
   plot = p_s1_academica,
   width = 9,
   height = 5.5,
@@ -215,5 +216,5 @@ cat("Peak incondicional:", peak_uncond,
 cat("Peak condicional  :", peak_cond, 
     "IC:", ci_cond[1], "-", ci_cond[2], "\n")
 cat("Figura guardada en:", 
-    file.path(path_figs, "fig_s1_perfil_edad_ingreso_academica.png"), "\n")
+    file.path(path_figures, "fig_s1_perfil_edad_ingreso_academica.png"), "\n") 
 
