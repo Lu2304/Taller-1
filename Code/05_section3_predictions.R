@@ -20,6 +20,77 @@ stargazer(
   out = file.path(path_tables, "tabla_descriptivas_predict.txt")
 )
 
+base_chunks_filtrada <- base_chunks_filtrada %>%
+  mutate(
+    p6210 = factor(p6210,
+                   levels = c(1,2,3,4,5,6,9),
+                   labels = c(
+                     "Ninguno",
+                     "Preescolar",
+                     "Básica primaria",
+                     "Básica secundaria",
+                     "Media",
+                     "Superior / universitaria",
+                     "No sabe / no informa"
+                   )
+    ),
+    
+    relab = factor(relab,
+                   levels = 1:9,
+                   labels = c(
+                     "Empleado empresa privada",
+                     "Empleado gobierno",
+                     "Empleado doméstico",
+                     "Cuenta propia",
+                     "Empleador / patrón",
+                     "Familiar sin remuneración",
+                     "Sin remuneración en otros hogares",
+                     "Jornalero / peón",
+                     "Otro"
+                   )
+    )
+  )
+
+base_chunks_filtrada <- base_chunks_filtrada %>%
+  mutate(
+    size_firm = factor(size_firm,
+                       levels = 1:5,
+                       labels = c(
+                         "Trabajador independiente",
+                         "2 a 5 trabajadores",
+                         "6 a 10 trabajadores",
+                         "11 a 50 trabajadores",
+                         "Más de 50 trabajadores"
+                       )
+    )
+  )
+tabla_bonita <- base_chunks_filtrada %>%
+  droplevels() %>%
+  select(all_of(des_vars)) %>%
+  tbl_summary(
+    label = list(
+      y_total_m ~ "Ingreso laboral mensual",
+      age ~ "Edad",
+      total_hours_worked ~ "Horas trabajadas por semana",
+      relab ~ "Ocupación",
+      p6210 ~ "Nivel educativo",
+      size_firm ~ "Tamaño de la empresa",
+      informal ~ "Empleo informal",
+      sex ~ "Sexo",
+      p6426 ~ "Antigüedad en el empleo"
+    ),
+    statistic = list(
+      all_continuous() ~ "{mean} ({sd})",
+      all_categorical() ~ "{n} ({p}%)"
+    ),
+    digits = all_continuous() ~ 2
+  ) %>%
+  bold_labels()
+gtsave(
+  as_gt(tabla_bonita),
+  filename = file.path(path_figures, "tabla_descriptivas.png")
+)
+
 
 training   <- base_chunks_filtrada |>  filter(chunk %in% 1:7)
 validation <- base_chunks_filtrada |>  filter(chunk %in% 8:10)
